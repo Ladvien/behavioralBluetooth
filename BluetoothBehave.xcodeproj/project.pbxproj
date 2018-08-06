@@ -10,6 +10,9 @@
 		B1090E082113B7110095D6E2 /* BluetoothBehave.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1090DFE2113B7110095D6E2 /* BluetoothBehave.framework */; };
 		B1090E0D2113B7110095D6E2 /* BluetoothBehaveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1090E0C2113B7110095D6E2 /* BluetoothBehaveTests.swift */; };
 		B1090E0F2113B7110095D6E2 /* BluetoothBehave.h in Headers */ = {isa = PBXBuildFile; fileRef = B1090E012113B7110095D6E2 /* BluetoothBehave.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		B1090E192113B7410095D6E2 /* BluetoothBehaveLocal.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1090E182113B7410095D6E2 /* BluetoothBehaveLocal.swift */; };
+		B1DA068F21148E06002D4ADB /* BluetoothBehaveDeviceState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1DA068E21148E06002D4ADB /* BluetoothBehaveDeviceState.swift */; };
+		B1DA069121148E78002D4ADB /* BluetoothBehaveRemote.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1DA069021148E78002D4ADB /* BluetoothBehaveRemote.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,6 +32,9 @@
 		B1090E072113B7110095D6E2 /* BluetoothBehaveTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BluetoothBehaveTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1090E0C2113B7110095D6E2 /* BluetoothBehaveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothBehaveTests.swift; sourceTree = "<group>"; };
 		B1090E0E2113B7110095D6E2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B1090E182113B7410095D6E2 /* BluetoothBehaveLocal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothBehaveLocal.swift; sourceTree = "<group>"; };
+		B1DA068E21148E06002D4ADB /* BluetoothBehaveDeviceState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothBehaveDeviceState.swift; sourceTree = "<group>"; };
+		B1DA069021148E78002D4ADB /* BluetoothBehaveRemote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothBehaveRemote.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +79,9 @@
 			children = (
 				B1090E012113B7110095D6E2 /* BluetoothBehave.h */,
 				B1090E022113B7110095D6E2 /* Info.plist */,
+				B1090E182113B7410095D6E2 /* BluetoothBehaveLocal.swift */,
+				B1DA069021148E78002D4ADB /* BluetoothBehaveRemote.swift */,
+				B1DA068E21148E06002D4ADB /* BluetoothBehaveDeviceState.swift */,
 			);
 			path = BluetoothBehave;
 			sourceTree = "<group>";
@@ -148,6 +157,7 @@
 				TargetAttributes = {
 					B1090DFD2113B7110095D6E2 = {
 						CreatedOnToolsVersion = 9.4.1;
+						LastSwiftMigration = 0940;
 					};
 					B1090E062113B7110095D6E2 = {
 						CreatedOnToolsVersion = 9.4.1;
@@ -194,6 +204,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B1DA068F21148E06002D4ADB /* BluetoothBehaveDeviceState.swift in Sources */,
+				B1DA069121148E78002D4ADB /* BluetoothBehaveRemote.swift in Sources */,
+				B1090E192113B7410095D6E2 /* BluetoothBehaveLocal.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -339,6 +352,7 @@
 		B1090E132113B7110095D6E2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
@@ -356,6 +370,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "honeysuckle-hardware.BluetoothBehave";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -364,6 +379,7 @@
 		B1090E142113B7110095D6E2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
@@ -389,6 +405,7 @@
 		B1090E162113B7110095D6E2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = BZSLFTY5UY;
 				INFOPLIST_FILE = BluetoothBehaveTests/Info.plist;
@@ -407,6 +424,7 @@
 		B1090E172113B7110095D6E2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = BZSLFTY5UY;
 				INFOPLIST_FILE = BluetoothBehaveTests/Info.plist;
