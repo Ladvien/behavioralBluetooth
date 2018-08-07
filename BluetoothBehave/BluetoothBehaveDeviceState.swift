@@ -42,7 +42,7 @@ extension CBManagerState {
 }
 
 public class BluetoothBehaveDeviceState: NSObject {
-    private lazy var _state = BluetoothBehaveDeviceStates.unknown
+    private var _state = BluetoothBehaveDeviceStates.unknown
     
     public func setState(state: BluetoothBehaveDeviceStates) -> Void {
         _state = state
@@ -50,6 +50,19 @@ public class BluetoothBehaveDeviceState: NSObject {
     
     public func getState() -> BluetoothBehaveDeviceStates {
         return _state
+    }
+    
+    public func ready() -> Bool {
+        if(_state == .unknown ||
+           _state == .connected ||
+           _state == .connecting ||
+           _state == .off ||
+           _state == .resetting ||
+           _state == .unsupported ||
+           _state == .unauthorized) {
+            return false
+        }
+        return true
     }
 }
 

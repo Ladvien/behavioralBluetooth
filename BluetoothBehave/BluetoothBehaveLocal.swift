@@ -47,6 +47,8 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
     internal var retriesOnDisconnect: Int = 1
     fileprivate var characteristicsAreAlwaysInteresting: Bool = false
     fileprivate var verboseOutput = false
+    internal var cancelSearchOnConnection = true
+    
     // Behavioral: Durations.
     internal var searchTimeout: Double = 1.0
     internal var reconnectTimerDuration: Double = 1.0
@@ -120,7 +122,7 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
     
     // #MARK: State Getters
     open func state()->BluetoothBehaveDeviceStates {
-        return self.deviceState.getState()
+        return deviceState.getState()
     }
     
     // #MARK: LocalBluetoothLECentral: Getters / Setters
@@ -473,7 +475,7 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
     public func getBluetoothBehaveDeviceState()->BluetoothBehaveDeviceState{
         // Provide the raw state of the device.
         // #MARK: UNUSED
-        return self.deviceState
+        return deviceState
     }
     
     /**
@@ -499,7 +501,7 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
     open func printDiscoveredDeviceListInfo(){
         // Check to make sure we're done searching, then print the all devices info.
         //if(searchComplete){
-        if(self.deviceState.getState() == BluetoothBehaveDeviceStates.idleWithDiscoveredDevices){
+        if(deviceState.getState() == .idleWithDiscoveredDevices){
             for ID in discoveredPeripherals.keys {
                 if let name = discoveredPeripherals[ID]?.getDeviceName(){
                     print("Device UUID: \(name)")
@@ -536,6 +538,12 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
         // 1. Empty peripheral lists.
         // 2. Reset unknownDevice index; used for avoiding duplicate names.
         // 3. Set device state to scanning.
+        print(deviceState.ready())
+        print(deviceState.getState())
+        if(!deviceState.ready()) {
+            debugOutput("Not ready to search")
+            return
+        }
         
         discoveredPeripherals = [:]
         discoveredDeviceRSSIArray = []
@@ -543,12 +551,10 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
         
         unknownIndex = 0
         
-        self.deviceState.setState(state: BluetoothBehaveDeviceStates.scanning)
+        deviceState.setState(state: .scanning)
         //clearDiscoveredDevices()
         // Strange.  If a search for peripherals is initiated it cancels all connections without firing didDisconnectPeripheral.  This compensates.
         clearConnectedDevices()
-        
-        //activeCentralManager = CBCentralManager(delegate: self, queue: nil)
         
         activeCentralManager.scanForPeripherals(withServices: discoveredServices, options: nil)
         
@@ -568,9 +574,9 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
         
         // 1
         if(discoveredPeripherals.isEmpty){
-            self.deviceState.setState(state: BluetoothBehaveDeviceStates.idle)
+            deviceState.setState(state: .idle)
         } else {
-            self.deviceState.setState(state: BluetoothBehaveDeviceStates.idleWithDiscoveredDevices)
+            deviceState.setState(state: .idleWithDiscoveredDevices)
         }
         
         // 2
@@ -583,15 +589,14 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
                 activeCentralManager.scanForPeripherals(withServices: discoveredServices, options: nil)
             } else if(numberOfSearchRepeats > numberOfSearchRepeatsIndex) {
                 activeCentralManager.scanForPeripherals(withServices: discoveredServices, options: nil)
+                deviceState.setState(state: .scanning)
                 numberOfSearchRepeatsIndex += 1
             } else {
-                self.activeCentralManager.stopScan()
-                searchTimeoutTimer.invalidate()
+                stopSearchTimer()
             }
         } else {
             // 3
-            self.activeCentralManager.stopScan()
-            searchTimeoutTimer.invalidate()
+            stopSearchTimer()
         }
         
         if let searchTimerExpired = delegate?.searchTimerExpired?(){
@@ -614,9 +619,9 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
         
         // 1
         if(discoveredPeripherals.isEmpty){
-            self.deviceState.setState(state: BluetoothBehaveDeviceStates.idle)
+            deviceState.setState(state: .idle)
         } else {
-            self.deviceState.setState(state: BluetoothBehaveDeviceStates.idleWithDiscoveredDevices)
+            deviceState.setState(state: .idleWithDiscoveredDevices)
         }
         //2
         activeCentralManager.stopScan()
@@ -645,7 +650,7 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
         // 6. Check to see if connection threshold is met.
         
         // 1
-        self.deviceState.setState(state: BluetoothBehaveDeviceStates.connecting)
+        deviceState.setState(state: .connecting)
         // 2
         if let peripheral = remoteDevice.bbPeripheral{
             
@@ -676,6 +681,7 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
                         
                         if let connectedRemoteSerialDevice = discoveredPeripherals[peripheral.identifier] {
                             setConnectedDevice(peripheral.identifier, device: connectedRemoteSerialDevice)
+                            cancelSearchOnConnection ? stopSearchTimer() : nil
                         }
                         
                         // MARK: ADD CBConnectPeripheralOptions
@@ -729,7 +735,7 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
         
         if let deviceToDisconnectPeripheral = connectedPeripherals[deviceOfInterest]?.bbPeripheral {
             activeCentralManager.cancelPeripheralConnection(deviceToDisconnectPeripheral)
-            self.deviceState.setState(state: BluetoothBehaveDeviceStates.purposefulDisconnect)
+            deviceState.setState(state: .purposefulDisconnect)
             purposefulDisconnect = true
             return true
         }
@@ -787,29 +793,32 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
         if #available(iOS 10.0, *) {
             switch central.state {
             case CBManagerState.unknown:
-                self.deviceState.setState(state: BluetoothBehaveDeviceStates.unknown)
+                deviceState.setState(state: .unknown)
                 debugOutput("Local state: unknown")
                 break
             case CBManagerState.resetting:
-                self.deviceState.setState(state: BluetoothBehaveDeviceStates.resetting)
+                deviceState.setState(state: .resetting)
                 debugOutput("Local state: resetting")
                 break
             case CBManagerState.unsupported:
-                self.deviceState.setState(state: BluetoothBehaveDeviceStates.unsupported)
+                deviceState.setState(state: .unsupported)
                 debugOutput("Local state: unsupported")
                 break
             case CBManagerState.unauthorized:
-                self.deviceState.setState(state: BluetoothBehaveDeviceStates.unauthorized)
+                deviceState.setState(state: .unauthorized)
                 debugOutput("Local state: unauthorized")
                 break
             case CBManagerState.poweredOff:
-                self.deviceState.setState(state: BluetoothBehaveDeviceStates.off)
+                deviceState.setState(state: .off)
                 debugOutput("Local state: poweredOff")
                 break
             case CBManagerState.poweredOn:
-                self.deviceState.setState(state: BluetoothBehaveDeviceStates.unknown)
+                deviceState.setState(state: .on)
                 debugOutput("Local state: poweredOn")
                 break
+            default:
+                deviceState.setState(state: .unknown)
+                debugOutput("Defaulted to local state: unknown")
             }
         } else {
             // Fallback on earlier versions
@@ -971,8 +980,6 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
             }
         }
         
-        
-        
         // 3
         if var desiredDeviceInConnectedDevices = connectedPeripherals[peripheral.identifier]?.bbPeripheral {
             
@@ -985,7 +992,7 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
         }
         
         // 6
-        self.deviceState.setState(state: BluetoothBehaveDeviceStates.connected)
+        deviceState.setState(state: .connected)
         
         // 7
         if let connectedToDevice = delegate?.connectedToDevice?(){
@@ -1007,7 +1014,7 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
         // 2. Check if retry limit is exceeded.
         // 3.   Set reconnect timer.
         
-        self.deviceState.setState(state: BluetoothBehaveDeviceStates.failedToConnect)
+        deviceState.setState(state: .failedToConnect)
         
         if(retryIndexOnFail < retriesAfterConnectionFail){
             
@@ -1044,11 +1051,11 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
         
         if(purposefulDisconnect == false){
             
-            discoveredPeripherals[peripheral.identifier]?.deviceState.setState(state: BluetoothBehaveDeviceStates.disconnected)
+            discoveredPeripherals[peripheral.identifier]?.deviceState.setState(state: .disconnected)
             
             if(retryIndexOnDisconnect < retriesOnDisconnect){
                 
-                self.deviceState.setState(state: BluetoothBehaveDeviceStates.connecting)
+                deviceState.setState(state: .connecting)
                 
                 reconnectTimer = Timer.scheduledTimer(timeInterval: timeBeforeAttemptingReconnectOnDisconnect, target: self, selector: #selector(bluetootBehaveLocal.reconnectTimerExpired), userInfo: nil, repeats: false)
                 debugOutput("didDisconnectPeripheral, purpose = " + String(purposefulDisconnect) + "\n\tRetry# " + String(retryIndexOnDisconnect) + " of " + String(retriesOnDisconnect) + " with " + String(timeBeforeAttemptingReconnectOnDisconnect) + "secs inbetween attempt")
@@ -1059,7 +1066,7 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
         }
         else {
             // Set the peripheral
-            discoveredPeripherals[peripheral.identifier]?.deviceState.setState(state: BluetoothBehaveDeviceStates.purposefulDisconnect)
+            discoveredPeripherals[peripheral.identifier]?.deviceState.setState(state: .purposefulDisconnect)
             //if let deviceStatusChanged = delegate?.deviceStatusChanged?(peripheral.identifier, deviceState: self.state){
             purposefulDisconnect = false
             //deviceStatusChanged
@@ -1169,6 +1176,8 @@ public class bluetootBehaveLocal: NSObject, bluetoothBehaveLocalDelegate, CBCent
             }
         }
     }
+    
+
     
     
 } // END Class
